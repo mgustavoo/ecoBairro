@@ -23,4 +23,10 @@ object SampleData {
             "", null
         )
     )
+
+    // Pontos de entrega: só aparecem no app com fonte e data de verificação.
+    // Preencha com dados OFICIAIS da região piloto. Exemplo:
+    //   DeliveryPoint("Nome do ponto", "Endereço", setOf("Vidro", "Papel"),
+    //       "Site da Prefeitura", LocalDate.of(2026, 11, 20))
+    val points = emptyList<DeliveryPoint>()
 }

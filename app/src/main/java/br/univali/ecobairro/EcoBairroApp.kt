@@ -68,18 +68,21 @@ enum class Screen { HOME, CALENDAR, GUIDE, POINTS }
 fun EcoBairroApp(
     guideService: GuideService = GuideService(SampleData.guides),
     scheduleService: ScheduleService = ScheduleService(SampleData.schedules),
+    pointService: PointService = PointService(SampleData.points),
     today: LocalDate = LocalDate.now()
 ) {
     var screen by remember { mutableStateOf(Screen.HOME) }
     var query by remember { mutableStateOf("") }
+    val navigate: (Screen) -> Unit = { target ->
+        screen = target
+        query = ""
+    }
 
     val texto = when (screen) {
         Screen.HOME -> "Escolha uma opção acima."
         Screen.CALENDAR -> renderCalendar(scheduleService, today)
         Screen.GUIDE -> renderGuide(guideService, query)
-        Screen.POINTS ->
-            "Nenhum ponto de entrega com informação verificada no momento. " +
-                "Consulte os canais oficiais."
+        Screen.POINTS -> renderPoints(pointService, query)
     }
 
     Scaffold(
@@ -133,25 +136,25 @@ fun EcoBairroApp(
             ) {
                 NavigationBarItem(
                     selected = screen == Screen.HOME,
-                    onClick = { screen = Screen.HOME },
+                    onClick = { navigate(Screen.HOME) },
                     icon = { Icon(Icons.Default.Home, contentDescription = "Início") },
                     label = { Text("Início") }
                 )
                 NavigationBarItem(
                     selected = screen == Screen.CALENDAR,
-                    onClick = { screen = Screen.CALENDAR },
+                    onClick = { navigate(Screen.CALENDAR) },
                     icon = { Icon(Icons.Default.CalendarMonth, contentDescription = "Calendário") },
                     label = { Text("Calendário") }
                 )
                 NavigationBarItem(
                     selected = screen == Screen.GUIDE,
-                    onClick = { screen = Screen.GUIDE },
+                    onClick = { navigate(Screen.GUIDE) },
                     icon = { Icon(Icons.Default.MenuBook, contentDescription = "Guia") },
                     label = { Text("Guia") }
                 )
                 NavigationBarItem(
                     selected = screen == Screen.POINTS,
-                    onClick = { screen = Screen.POINTS },
+                    onClick = { navigate(Screen.POINTS) },
                     icon = { Icon(Icons.Default.LocationOn, contentDescription = "Pontos") },
                     label = { Text("Pontos") }
                 )
@@ -182,26 +185,26 @@ fun EcoBairroApp(
                     title = "Calendário de coleta",
                     icon = Icons.Default.CalendarMonth,
                     selected = screen == Screen.CALENDAR,
-                    onClick = { screen = Screen.CALENDAR },
+                    onClick = { navigate(Screen.CALENDAR) },
                     modifier = Modifier.weight(1f)
                 )
                 ActionChipCard(
                     title = "Guia de separação",
                     icon = Icons.Default.MenuBook,
                     selected = screen == Screen.GUIDE,
-                    onClick = { screen = Screen.GUIDE },
+                    onClick = { navigate(Screen.GUIDE) },
                     modifier = Modifier.weight(1f)
                 )
                 ActionChipCard(
                     title = "Pontos de entrega",
                     icon = Icons.Default.LocationOn,
                     selected = screen == Screen.POINTS,
-                    onClick = { screen = Screen.POINTS },
+                    onClick = { navigate(Screen.POINTS) },
                     modifier = Modifier.weight(1f)
                 )
             }
 
-            if (screen == Screen.GUIDE) {
+            if (screen == Screen.GUIDE || screen == Screen.POINTS) {
                 OutlinedTextField(
                     value = query,
                     onValueChange = { query = it },
@@ -231,7 +234,7 @@ fun EcoBairroApp(
                 Screen.HOME -> HomeScreenBanner()
                 Screen.CALENDAR -> CalendarVisualSection(scheduleService, today)
                 Screen.GUIDE -> GuideVisualSection(guideService, query)
-                Screen.POINTS -> PointsVisualSection()
+                Screen.POINTS -> PointsVisualSection(pointService, query)
             }
 
             Surface(
@@ -540,7 +543,9 @@ private fun GuideVisualSection(service: GuideService, query: String) {
 }
 
 @Composable
-private fun PointsVisualSection() {
+private fun PointsVisualSection(service: PointService, query: String) {
+    val results = service.byMaterial(query)
+
     ElevatedCard(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.elevatedCardColors(
@@ -579,11 +584,37 @@ private fun PointsVisualSection() {
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = "Nenhum ponto de entrega com informação verificada no momento. Consulte os canais oficiais da prefeitura.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            if (results.isEmpty()) {
+                Text(
+                    text = if (service.publishable().isEmpty()) {
+                        "Nenhum ponto de entrega com informação verificada no momento. Consulte os canais oficiais da prefeitura."
+                    } else {
+                        "Nenhum ponto encontrado para esse material."
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                results.forEach { p ->
+                    Column(modifier = Modifier.padding(vertical = 6.dp)) {
+                        Text(
+                            text = p.name,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(text = p.address, style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            text = "Materiais: ${p.materials.sorted().joinToString(", ")}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            text = "Fonte: ${p.source} (${p.verifiedAt})",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -618,5 +649,18 @@ private fun renderCalendar(service: ScheduleService, today: LocalDate): String {
         "${s.type} – ${s.region}\nDias: $dias, às ${s.time}\n" +
             "Próxima coleta: ${prox ?: "indisponível"}\n" +
             "Fonte: ${s.source} (verificado em ${s.verifiedAt})"
+    }
+}
+
+private fun renderPoints(service: PointService, query: String): String {
+    if (service.publishable().isEmpty()) {
+        return "Nenhum ponto de entrega com informação verificada no momento. " +
+            "Consulte os canais oficiais."
+    }
+    val r = service.byMaterial(query)
+    return if (r.isEmpty()) "Nenhum ponto encontrado para esse material."
+    else r.joinToString("\n\n") { p ->
+        "${p.name}\n${p.address}\nMateriais: ${p.materials.sorted().joinToString(", ")}\n" +
+            "Fonte: ${p.source} (verificado em ${p.verifiedAt})"
     }
 }
