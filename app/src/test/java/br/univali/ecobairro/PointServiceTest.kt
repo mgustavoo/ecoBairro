@@ -33,4 +33,24 @@ class PointServiceTest {
         val service = PointService(listOf(verificado, naoVerificado))
         assertEquals(listOf(verificado), service.publishable())
     }
+
+    @Test fun buscaVazia_retornaTodosOsPublicaveis() {
+        val service = PointService(listOf(verificado))
+        assertEquals(1, service.byMaterial("  ").size)
+    }
+
+    @Test fun busca_ignoraMaiusculas() {
+        val service = PointService(listOf(verificado))
+        assertEquals("Ecoponto Central", service.byMaterial("vIdRo").single().name)
+    }
+
+    @Test fun buscaSemResultado_retornaListaVazia() {
+        val service = PointService(listOf(verificado))
+        assertTrue(service.byMaterial("pilha").isEmpty())
+    }
+
+    @Test fun busca_naoRetornaPontoNaoVerificado() {
+        val service = PointService(listOf(verificado.copy(verifiedAt = null)))
+        assertTrue(service.byMaterial("vidro").isEmpty())
+    }
 }
