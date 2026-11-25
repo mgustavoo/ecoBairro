@@ -9,6 +9,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import org.junit.Rule
 import org.junit.Test
+import java.time.LocalDate
 
 class EcoBairroAppTest {
     @get:Rule val rule = createComposeRule()
@@ -18,11 +19,20 @@ class EcoBairroAppTest {
         WasteGuide("Vidro", "Enxágue e embale cacos com cuidado.")
     )
 
-    private fun abrirApp() = rule.setContent {
+    private val pontoVerificado = DeliveryPoint(
+        name = "Ecoponto Central",
+        address = "Rua das Flores, 100",
+        materials = setOf("Vidro", "Papel"),
+        source = "Prefeitura (site oficial)",
+        verifiedAt = LocalDate.of(2026, 11, 20)
+    )
+
+    private fun abrirApp(pontos: List<DeliveryPoint> = emptyList()) = rule.setContent {
         MaterialTheme {
             EcoBairroApp(
                 guideService = GuideService(guias),
-                scheduleService = ScheduleService(emptyList())
+                scheduleService = ScheduleService(emptyList()),
+                pointService = PointService(pontos)
             )
         }
     }
@@ -44,5 +54,18 @@ class EcoBairroAppTest {
         abrirApp()
         rule.onNodeWithText("Calendário de coleta").performClick()
         rule.onNodeWithTag("conteudo").assertTextContains("não confirmada", substring = true)
+    }
+
+    @Test fun pontos_listaPontoVerificado() {
+        abrirApp(listOf(pontoVerificado))
+        rule.onNodeWithText("Pontos de entrega").performClick()
+        rule.onNodeWithTag("conteudo").assertTextContains("Ecoponto Central", substring = true)
+    }
+
+    @Test fun pontos_buscaPorMaterial() {
+        abrirApp(listOf(pontoVerificado))
+        rule.onNodeWithText("Pontos de entrega").performClick()
+        rule.onNodeWithTag("busca").performTextInput("pilha")
+        rule.onNodeWithTag("conteudo").assertTextContains("Nenhum ponto encontrado", substring = true)
     }
 }
