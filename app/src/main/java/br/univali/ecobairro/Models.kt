@@ -13,3 +13,11 @@ data class CollectionSchedule(
     val source: String,
     val verifiedAt: LocalDate?
 )
+
+data class DeliveryPoint(
+    val name: String,
+    val address: String,
+    val materials: Set<String>,
+    val source: String,
+    val verifiedAt: LocalDate?
+)
