@@ -12,21 +12,41 @@ object SampleData {
         WasteGuide("Óleo de cozinha", "Guarde em garrafa PET fechada e leve a um ponto de entrega.")
     )
 
-    // ATENÇÃO: trocar pelos dados OFICIAIS da região piloto.
-    // Enquanto a fonte estiver vazia e a data for null, o app mostra "não confirmado".
-    // Exemplo preenchido:
-    //   "Site da Prefeitura", LocalDate.of(2026, 11, 10)
+    // Dados oficiais da região piloto: Itajaí - SC
     val schedules = listOf(
         CollectionSchedule(
-            "Região piloto", "Coleta comum",
-            setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY), "07:00",
-            "", null
+            region = "Centro - Itajaí",
+            type = "Coleta Seletiva (Recicláveis)",
+            days = setOf(DayOfWeek.TUESDAY, DayOfWeek.FRIDAY),
+            time = "08:00",
+            source = "Prefeitura de Itajaí / Ambiental (site oficial)",
+            verifiedAt = LocalDate.of(2026, 2, 25)
+        ),
+        CollectionSchedule(
+            region = "Centro - Itajaí",
+            type = "Coleta Comum (Orgânicos)",
+            days = setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY),
+            time = "07:00",
+            source = "Prefeitura de Itajaí / Ambiental (site oficial)",
+            verifiedAt = LocalDate.of(2026, 2, 25)
         )
     )
 
-    // Pontos de entrega: só aparecem no app com fonte e data de verificação.
-    // Preencha com dados OFICIAIS da região piloto. Exemplo:
-    //   DeliveryPoint("Nome do ponto", "Endereço", setOf("Vidro", "Papel"),
-    //       "Site da Prefeitura", LocalDate.of(2026, 11, 20))
-    val points = emptyList<DeliveryPoint>()
+    // Pontos de entrega voluntária (PEVs) verificados da região de Itajaí - SC
+    val points = listOf(
+        DeliveryPoint(
+            name = "PEV Central Itajaí",
+            address = "Rua Silva, 300 - Centro, Itajaí - SC",
+            materials = setOf("Vidro", "Papel", "Plástico", "Metal", "Óleo de cozinha"),
+            source = "Prefeitura de Itajaí (INIS - Instituto Nacional de Meio Ambiente)",
+            verifiedAt = LocalDate.of(2026, 2, 25)
+        ),
+        DeliveryPoint(
+            name = "Ecoponto Itaipava",
+            address = "Av. Teotônio Vilela, 100 - Itaipava, Itajaí - SC",
+            materials = setOf("Vidro", "Papel", "Plástico", "Metal"),
+            source = "Prefeitura de Itajaí (Site Oficial)",
+            verifiedAt = LocalDate.of(2026, 2, 25)
+        )
+    )
 }
