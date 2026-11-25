@@ -27,4 +27,10 @@ class PointServiceTest {
 
     @Test fun pontoCompleto_ePublicavel() =
         assertTrue(DataValidator.isPointPublishable(verificado))
+
+    @Test fun publishable_retornaSomentePontosVerificados() {
+        val naoVerificado = verificado.copy(name = "Ponto sem fonte", source = "")
+        val service = PointService(listOf(verificado, naoVerificado))
+        assertEquals(listOf(verificado), service.publishable())
+    }
 }
